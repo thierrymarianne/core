@@ -6,7 +6,7 @@
 
 if ( ! (window.shower && window.shower.init)) {
 
-window.shower = (function(window, document, undefined) {
+window.shower = (function(window, document, Myo, undefined) {
 	var shower = {},
 		url = window.location,
 		console = window.console,
@@ -14,7 +14,8 @@ window.shower = (function(window, document, undefined) {
 		slides = [],
 		progress = [],
 		timer,
-		isHistoryApiSupported = ! ! (window.history && window.history.pushState);
+		isHistoryApiSupported = ! ! (window.history && window.history.pushState),
+		hub = window.hub;
 
 	// Shower debug mode env, could be overridden before shower.init
 	shower.debugMode = false;
@@ -835,6 +836,22 @@ window.shower = (function(window, document, undefined) {
 		return '#' + shower.slideList[slideNumber].id;
 	};
 
+	/**
+	 * Myo event listener
+	 * @param frame frame
+	 */
+	shower.myo = function(frame) {
+		switch (frame.pose.type) {
+			case frame.pose.POSE_WAVE_IN:
+				shower._turnPreviousSlide();
+			break;
+
+			case frame.pose.POSE_WAVE_OUT:
+				shower._turnNextSlide();
+			break;
+		}
+	};
+
 	// For overriding shower properties before init
 	for (var overridingProp in window.shower) {
 		shower[overridingProp] = window.shower[overridingProp];
@@ -1037,8 +1054,13 @@ window.shower = (function(window, document, undefined) {
 		}
 	}, false);
 
+	if (Myo !== undefined) {
+		hub = new Myo.Hub();
+		hub.on('frame', shower.myo);
+	}
+
 	return shower;
 
-})(this, this.document);
+})(this, this.document, this.Myo);
 
 }
